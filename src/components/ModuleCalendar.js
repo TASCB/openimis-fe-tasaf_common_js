@@ -35,7 +35,6 @@ const darken = (hex, amt) => {
   return `rgb(${f(r)},${f(g)},${f(b)})`;
 };
 
-// Events are scheduled by day, so a midnight stamp carries no time information.
 const eventTime = (iso) => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime()) || (!d.getHours() && !d.getMinutes())) return '';
