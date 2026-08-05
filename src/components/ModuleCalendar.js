@@ -38,7 +38,7 @@ const darken = (hex, amt) => {
 const eventTime = (iso) => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime()) || (!d.getHours() && !d.getMinutes())) return '';
-  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 const DOW_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
