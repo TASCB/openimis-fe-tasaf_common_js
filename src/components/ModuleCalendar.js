@@ -8,6 +8,7 @@ import {
 import ChevronLeft from '@material-ui/icons/ChevronLeft';
 import ChevronRight from '@material-ui/icons/ChevronRight';
 import CalendarTodayIcon from '@material-ui/icons/CalendarToday';
+import PublicIcon from '@material-ui/icons/Public';
 import ViewModuleIcon from '@material-ui/icons/ViewModule';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import ViewListIcon from '@material-ui/icons/ViewList';
@@ -156,11 +157,15 @@ const useStyles = makeStyles((theme) => ({
 function ModuleCalendar({
   moduleName, events, fetching, error, onFetchRange,
   statusColors, statusList, onOpenEvent, onCreate, title, subtitle,
+  onFetchUnifiedRange, sourceColors, ownSource, unifiedOnly = false,
 }) {
   const classes = useStyles();
   const modulesManager = useModulesManager();
   const { formatMessage, formatMessageWithValues } = useTranslations(moduleName, modulesManager);
   const [view, setView] = useState('month');
+  const [unified, setUnified] = useState(false);
+  const [hiddenSources, setHiddenSources] = useState(() => new Set());
+  const unifiedActive = unifiedOnly || unified;
   const [cursor, setCursor] = useState(new Date());
   const [hidden, setHidden] = useState(() => new Set());
   const [dayPop, setDayPop] = useState(null); // { anchorEl, day, events }
@@ -173,14 +178,20 @@ function ModuleCalendar({
     return { from, to: addDays(from, 42) };
   }, [view, cursor]);
 
-  useEffect(() => { onFetchRange(range.from, range.to); }, [range.from && range.from.getTime(), range.to && range.to.getTime()]);
+  useEffect(() => {
+    const fetchRange = unifiedActive && onFetchUnifiedRange ? onFetchUnifiedRange : onFetchRange;
+    fetchRange(range.from, range.to);
+  }, [unifiedActive, range.from && range.from.getTime(), range.to && range.to.getTime()]);
 
   const tr = (status) => formatMessage(`status.${status}`);
   const color = (status) => statusColors[status] || '#9e9e9e';
+  const eventColor = (e) => (unifiedActive && e.source && sourceColors
+    ? sourceColors[e.source] || '#9e9e9e'
+    : color(e.status));
 
   const visibleEvents = useMemo(
-    () => (events || []).filter((e) => !hidden.has(e.status)),
-    [events, hidden],
+    () => (events || []).filter((e) => !hidden.has(e.status) && !hiddenSources.has(e.source)),
+    [events, hidden, hiddenSources],
   );
   const eventsByDay = useMemo(() => {
     const map = {};
@@ -208,12 +219,18 @@ function ModuleCalendar({
     return next;
   });
 
+  const toggleSource = (src) => setHiddenSources((prev) => {
+    const next = new Set(prev);
+    if (next.has(src)) next.delete(src); else next.add(src);
+    return next;
+  });
+
   const renderEvent = (e, dense = true) => (
     <button
       type="button"
       key={e.id}
       className={classes.event}
-      style={{ background: rgba(color(e.status), 0.14), color: darken(color(e.status), 0.35), borderLeft: `3px solid ${color(e.status)}` }}
+      style={{ background: rgba(eventColor(e), 0.14), color: darken(eventColor(e), 0.35), borderLeft: `3px solid ${eventColor(e)}` }}
       title={`${e.code} · ${e.title} — ${tr(e.status)}`}
       onClick={() => onOpenEvent(e)}
       aria-label={`${e.code} ${e.title}, ${tr(e.status)}`}
@@ -306,6 +323,15 @@ function ModuleCalendar({
             <Typography variant="subtitle1" className={classes.rangeLabel}>{rangeLabel}</Typography>
           </div>
           <div className={classes.seg}>
+            {onFetchUnifiedRange && !unifiedOnly && (
+              <Button
+                className={`${classes.segBtn} ${unified ? classes.segActive : ''}`}
+                startIcon={<PublicIcon />}
+                onClick={() => setUnified((u) => !u)}
+              >
+                {formatMessage(unified ? 'calendar.scope.all' : 'calendar.scope.module')}
+              </Button>
+            )}
             {VIEWS.map((v) => (
               <Button
                 key={v}
@@ -320,6 +346,24 @@ function ModuleCalendar({
         </div>
 
         {/* Legend / filter */}
+        {unifiedActive && sourceColors && (
+          <div className={classes.legend} role="group" aria-label={formatMessage('calendar.sourceLegend')}>
+            {Object.keys(sourceColors).map((src) => (
+              <span
+                key={src}
+                className={`${classes.legendChip} ${hiddenSources.has(src) ? classes.legendOff : ''}`}
+                onClick={() => toggleSource(src)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleSource(src); }}
+              >
+                <span className={classes.legendDot} style={{ background: sourceColors[src] }} />
+                {formatMessage(`calendar.source.${src}`)}
+                {src === ownSource ? ` (${formatMessage('calendar.scope.module')})` : ''}
+              </span>
+            ))}
+          </div>
+        )}
         <div className={classes.legend} role="group" aria-label={formatMessage('calendar.statusFilter')}>
           {statusList.map((s) => (
             <span
@@ -363,7 +407,7 @@ function ModuleCalendar({
                         tabIndex={0}
                         onKeyDown={(ev) => { if (ev.key === 'Enter') onOpenEvent(e); }}
                       >
-                        <span className={classes.legendDot} style={{ background: color(e.status) }} />
+                        <span className={classes.legendDot} style={{ background: eventColor(e) }} />
                         <span className={classes.eventCode}>{e.code}</span>
                         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
                         <span style={{ color: darken(color(e.status), 0.25), fontSize: 12, fontWeight: 600 }}>{tr(e.status)}</span>
