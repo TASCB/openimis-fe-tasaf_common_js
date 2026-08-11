@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import ModuleCalendar from './components/ModuleCalendar';
+import TruncatedCell, { cell, fixedTableStyles } from './components/TableCell';
 
 export {
   BRAND_TEAL,
@@ -16,7 +17,7 @@ export {
   drawMetadataBoxes,
 } from './pdf/branded';
 
-export { ModuleCalendar };
+export { ModuleCalendar, TruncatedCell, cell, fixedTableStyles };
 
 const DEFAULT_CONFIG = {
   refs: [
