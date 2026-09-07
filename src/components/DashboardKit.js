@@ -94,7 +94,9 @@ const useStyles = makeStyles((theme) => ({
 
   // Pipeline: a rail of connected icon nodes above, a row of value cards below, one
   // column per stage so the two rows stay aligned.
-  pipeline: { display: 'flex', alignItems: 'stretch', width: '100%' },
+  pipeline: { display: 'flex', flexDirection: 'column', gap: theme.spacing(2.5), width: '100%' },
+  pipelineRow: { display: 'flex', alignItems: 'stretch', width: '100%' },
+  pipelineSpacer: { flex: '1 1 0', minWidth: 0 },
   pipelineStage: { flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column' },
   pipelineRail: { display: 'flex', alignItems: 'center', marginBottom: theme.spacing(1.5) },
   // The outer half-segments are blank so the dashes never overhang the first/last node.
@@ -274,33 +276,45 @@ export function RankedList({ items, emptyText }) {
   );
 }
 
-export function PipelineFlow({ stages, emptyText }) {
+export function PipelineFlow({ stages, emptyText, maxPerRow = 5 }) {
   const classes = useStyles();
   const list = stages || [];
   if (!list.length) return <EmptyState text={emptyText} />;
 
+  const rows = [];
+  for (let i = 0; i < list.length; i += maxPerRow) rows.push(list.slice(i, i + maxPerRow));
+
   return (
     <div className={classes.pipeline}>
-      {list.map((s, idx) => (
-        <div className={classes.pipelineStage} key={s.key ?? s.label}>
-          {s.icon && (
-            <div className={classes.pipelineRail}>
-              <span className={idx === 0 ? classes.pipelineDashBlank : classes.pipelineDash} />
-              <span className={classes.pipelineNode}>{s.icon}</span>
-              <span className={idx === list.length - 1 ? classes.pipelineDashBlank : classes.pipelineDash} />
+      {rows.map((row, rowIdx) => (
+        // eslint-disable-next-line react/no-array-index-key
+        <div className={classes.pipelineRow} key={`row-${rowIdx}`}>
+          {row.map((s, idx) => (
+            <div className={classes.pipelineStage} key={s.key ?? s.label}>
+              {s.icon && (
+                <div className={classes.pipelineRail}>
+                  <span className={idx === 0 ? classes.pipelineDashBlank : classes.pipelineDash} />
+                  <span className={classes.pipelineNode}>{s.icon}</span>
+                  <span className={idx === row.length - 1 ? classes.pipelineDashBlank : classes.pipelineDash} />
+                </div>
+              )}
+              <div
+                className={`${classes.pipelineCard} ${s.onClick ? classes.pipelineCardClickable : ''}`}
+                onClick={s.onClick}
+                role={s.onClick ? 'button' : undefined}
+                tabIndex={s.onClick ? 0 : undefined}
+                onKeyDown={(e) => { if (e.key === 'Enter' && s.onClick) s.onClick(); }}
+              >
+                <span className={classes.pipelineValue}>{fmt(s.value)}</span>
+                <span className={classes.pipelineLabel}>{s.label}</span>
+                {s.amount != null && <span className={classes.pipelineAmount}>{s.amount}</span>}
+              </div>
             </div>
-          )}
-          <div
-            className={`${classes.pipelineCard} ${s.onClick ? classes.pipelineCardClickable : ''}`}
-            onClick={s.onClick}
-            role={s.onClick ? 'button' : undefined}
-            tabIndex={s.onClick ? 0 : undefined}
-            onKeyDown={(e) => { if (e.key === 'Enter' && s.onClick) s.onClick(); }}
-          >
-            <span className={classes.pipelineValue}>{fmt(s.value)}</span>
-            <span className={classes.pipelineLabel}>{s.label}</span>
-            {s.amount != null && <span className={classes.pipelineAmount}>{s.amount}</span>}
-          </div>
+          ))}
+          {rows.length > 1 && Array.from({ length: maxPerRow - row.length }).map((_, i) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <div className={classes.pipelineSpacer} key={`pad-${rowIdx}-${i}`} />
+          ))}
         </div>
       ))}
     </div>
