@@ -1,7 +1,7 @@
 import React, {
   useEffect, useState, useMemo,
 } from 'react';
-import { makeStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import {
   Paper, Typography, Button, IconButton, Popover, Box, Fab,
 } from '@material-ui/core';

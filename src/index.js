@@ -1,6 +1,5 @@
 /* eslint-disable import/prefer-default-export */
 import ModuleCalendar from './components/ModuleCalendar';
-import TruncatedCell, { cell, fixedTableStyles } from './components/TableCell';
 
 export {
   BRAND_TEAL,
@@ -17,7 +16,20 @@ export {
   drawMetadataBoxes,
 } from './pdf/branded';
 
-export { ModuleCalendar, TruncatedCell, cell, fixedTableStyles };
+export { ModuleCalendar };
+
+// Presentational dashboard building blocks. Purely visual and module-agnostic, so any
+// module can compose a dashboard from them instead of copying the file.
+export {
+  DashboardHeader,
+  StatCard,
+  SectionCard,
+  EmptyState,
+  Breakdown,
+  RankedList,
+  PipelineFlow,
+  Stepper,
+} from './components/DashboardKit';
 
 const DEFAULT_CONFIG = {
   refs: [

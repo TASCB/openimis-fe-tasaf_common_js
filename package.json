@@ -16,12 +16,9 @@
     "prepare": "npm run build"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0",
-    "react-intl": "^5.8.1",
-    "@material-ui/core": "^4.0.0",
-    "@material-ui/icons": "^4.0.0",
-    "@material-ui/styles": "^4.0.0"
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-intl": "^5.8.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
@@ -45,7 +42,8 @@
     "rollup": "^2.10.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "dependencies": {
     "jspdf": "^4.2.0",
