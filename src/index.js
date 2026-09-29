@@ -31,6 +31,19 @@ export {
   Stepper,
 } from './components/DashboardKit';
 
+// Landscape quick-look dialog frame shared by every module's list previews.
+export {
+  default as PreviewDialog,
+  PreviewField,
+  PreviewSection,
+  PreviewText,
+  usePreviewStyles,
+  BORDER as PREVIEW_BORDER,
+  MUTED as PREVIEW_MUTED,
+  INK as PREVIEW_INK,
+  PANEL as PREVIEW_PANEL,
+} from './components/PreviewDialog';
+
 const DEFAULT_CONFIG = {
   refs: [
     { key: 'tasafCommon.ModuleCalendar', ref: ModuleCalendar },
