@@ -18,7 +18,7 @@ import {
   useTranslations, useModulesManager, ProgressOrError, withTooltip,
 } from '@openimis/fe-core';
 import {
-  startOfMonth, endOfMonth, startOfWeek, addDays,
+  startOfMonth, endOfMonth, startOfWeek, addDays, layoutWeek, coversDay, eventSpan,
 } from '../utils/calendar-dates';
 
 /* ── colour helpers ── */
@@ -102,7 +102,15 @@ const useStyles = makeStyles((theme) => ({
   },
   dowWeekend: { color: theme.palette.text.disabled },
   body: { flex: 1, display: 'flex', flexDirection: 'column' },
-  weekRow: { display: 'flex', flex: 1, minHeight: 104 },
+  weekRow: { display: 'flex', flex: 1, minHeight: 104, position: 'relative' },
+  bars: {
+    position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, pointerEvents: 'none',
+  },
+  bar: {
+    position: 'absolute', pointerEvents: 'auto', height: 18,
+  },
+  barContinuesBefore: { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 },
+  barContinuesAfter: { borderTopRightRadius: 0, borderBottomRightRadius: 0 },
   cell: {
     flex: 1, minWidth: 0, borderRight: `1px solid ${theme.palette.divider}`,
     borderBottom: `1px solid ${theme.palette.divider}`, padding: theme.spacing(0.5),
@@ -133,7 +141,7 @@ const useStyles = makeStyles((theme) => ({
   eventCode: { fontWeight: 700, fontVariantNumeric: 'tabular-nums', marginRight: 4 },
   more: {
     fontSize: 11, color: theme.palette.primary.main, cursor: 'pointer', fontWeight: 600,
-    padding: '0 4px', alignSelf: 'flex-start', background: 'none', border: 'none',
+    padding: '0 4px', alignSelf: 'flex-start', background: 'none', border: 'none', marginTop: 'auto',
   },
   popDay: { padding: theme.spacing(1.5), maxWidth: 320 },
   popTitle: { fontWeight: 600, marginBottom: theme.spacing(1) },
@@ -192,14 +200,6 @@ function ModuleCalendar({
     () => (events || []).filter((e) => !hidden.has(e.status) && !hiddenSources.has(e.source)),
     [events, hidden, hiddenSources],
   );
-  const eventsByDay = useMemo(() => {
-    const map = {};
-    visibleEvents.forEach((e) => {
-      const key = new Date(e.startDatetime).toDateString();
-      (map[key] = map[key] || []).push(e);
-    });
-    return map;
-  }, [visibleEvents]);
 
   const move = (dir) => {
     const d = new Date(cursor);
@@ -224,12 +224,22 @@ function ModuleCalendar({
     return next;
   });
 
-  const renderEvent = (e, dense = true) => (
+  const spanLabel = (e) => {
+    const { first, last } = eventSpan(e);
+    if (sameDay(first, last)) return '';
+    const fmt = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    return `${fmt(first)} – ${fmt(last)}`;
+  };
+  const eventsOnDay = (day) => visibleEvents.filter((e) => coversDay(e, day));
+
+  const renderEvent = (e, dense = true, extraClass = '', extraStyle = {}) => (
     <button
       type="button"
       key={e.id}
-      className={classes.event}
-      style={{ background: rgba(eventColor(e), 0.14), color: darken(eventColor(e), 0.35), borderLeft: `3px solid ${eventColor(e)}` }}
+      className={`${classes.event} ${extraClass}`}
+      style={{
+        background: rgba(eventColor(e), 0.14), color: darken(eventColor(e), 0.35), borderLeft: `3px solid ${eventColor(e)}`, ...extraStyle,
+      }}
       title={`${e.code} · ${e.title} — ${tr(e.status)}`}
       onClick={() => onOpenEvent(e)}
       aria-label={`${e.code} ${e.title}, ${tr(e.status)}`}
@@ -239,11 +249,12 @@ function ModuleCalendar({
     </button>
   );
 
-  const renderCell = (day, inMonth) => {
+  const DAY_NUM_HEIGHT = 24;
+  const LANE_HEIGHT = 20;
+
+  const renderCell = (day, inMonth, hiddenCount) => {
     const isToday = sameDay(day, today);
     const isWeekend = [0, 6].includes(day.getDay());
-    const list = eventsByDay[day.toDateString()] || [];
-    const max = view === 'week' ? 99 : 3;
     const cls = [classes.cell];
     if (!inMonth) cls.push(classes.cellOther);
     else if (isToday) cls.push(classes.cellToday);
@@ -256,16 +267,40 @@ function ModuleCalendar({
         >
           {day.getDate()}
         </span>
-        {list.slice(0, max).map((e) => renderEvent(e))}
-        {list.length > max && (
+        {hiddenCount > 0 && (
           <button
             type="button"
             className={classes.more}
-            onClick={(ev) => setDayPop({ anchorEl: ev.currentTarget, day, events: list })}
+            onClick={(ev) => setDayPop({ anchorEl: ev.currentTarget, day, events: eventsOnDay(day) })}
           >
-            {formatMessageWithValues('calendar.more', { count: list.length - max })}
+            {formatMessageWithValues('calendar.more', { count: hiddenCount })}
           </button>
         )}
+      </div>
+    );
+  };
+
+  const renderWeek = (days, inMonth, maxLanes, minHeight) => {
+    const segments = layoutWeek(days[0], visibleEvents);
+    const hidden = days.map((_, i) => segments.filter((g) => g.lane >= maxLanes && g.start <= i && i <= g.end).length);
+    const lanes = segments.reduce((n, g) => Math.max(n, g.lane + 1), 0);
+    const height = Math.max(minHeight, DAY_NUM_HEIGHT + Math.min(lanes, maxLanes) * LANE_HEIGHT + (hidden.some(Boolean) ? 18 : 6));
+    return (
+      <div className={classes.weekRow} key={days[0].toISOString()} style={{ minHeight: height }}>
+        {days.map((day, i) => renderCell(day, inMonth(day), hidden[i]))}
+        <div className={classes.bars}>
+          {segments.filter((g) => g.lane < maxLanes).map((g) => renderEvent(
+            g.event,
+            true,
+            `${classes.bar} ${g.continuesBefore ? classes.barContinuesBefore : ''} ${g.continuesAfter ? classes.barContinuesAfter : ''}`,
+            {
+              left: `calc(${(g.start * 100) / 7}% + 3px)`,
+              width: `calc(${((g.end - g.start + 1) * 100) / 7}% - 6px)`,
+              top: DAY_NUM_HEIGHT + g.lane * LANE_HEIGHT,
+              ...(g.continuesBefore ? { borderLeft: 'none' } : {}),
+            },
+          ))}
+        </div>
       </div>
     );
   };
@@ -409,6 +444,7 @@ function ModuleCalendar({
                         <span className={classes.legendDot} style={{ background: eventColor(e) }} />
                         <span className={classes.eventCode}>{e.code}</span>
                         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
+                        {spanLabel(e) && <span style={{ color: '#888', fontSize: 12 }}>{spanLabel(e)}</span>}
                         <span style={{ color: darken(color(e.status), 0.25), fontSize: 12, fontWeight: 600 }}>{tr(e.status)}</span>
                         {!!eventTime(e.startDatetime) && (
                           <span style={{ color: '#888', fontSize: 12 }}>{eventTime(e.startDatetime)}</span>
@@ -428,11 +464,9 @@ function ModuleCalendar({
                   </div>
                 ))}
               </div>
-              {(view === 'month' ? monthWeeks : [weekDays]).map((wk, i) => (
-                <div className={classes.weekRow} key={i} style={view === 'week' ? { minHeight: 320 } : {}}>
-                  {wk.map((day) => renderCell(day, view === 'week' || day.getMonth() === cursor.getMonth()))}
-                </div>
-              ))}
+              {view === 'month'
+                ? monthWeeks.map((wk) => renderWeek(wk, (day) => day.getMonth() === cursor.getMonth(), 3, 104))
+                : renderWeek(weekDays, () => true, 99, 320)}
             </div>
           )
         )}
