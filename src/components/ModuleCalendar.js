@@ -5,7 +5,7 @@ import {
   makeStyles, useTheme, alpha, darken,
 } from '@material-ui/core/styles';
 import {
-  Paper, Typography, Button, IconButton, Popover, Box, Fab,
+  Paper, Typography, Button, IconButton, Popover, Box, Fab, TextField, MenuItem, Checkbox,
 } from '@material-ui/core';
 import ChevronLeft from '@material-ui/icons/ChevronLeft';
 import ChevronRight from '@material-ui/icons/ChevronRight';
@@ -100,6 +100,7 @@ const useStyles = makeStyles((theme) => ({
   },
   legendOff: { opacity: 0.4 },
   legendDot: { width: 10, height: 10, borderRadius: '50%', flexShrink: 0 },
+  statusField: { minWidth: 200, maxWidth: 280, marginLeft: 'auto' },
   gridHead: { display: 'flex', borderBottom: `1px solid ${theme.palette.divider}` },
   dow: {
     flex: 1, textAlign: 'center', fontWeight: 600, fontSize: 11.5, letterSpacing: 0.4,
@@ -225,12 +226,6 @@ function ModuleCalendar({
   const rangeLabel = view === 'week'
     ? `${startOfWeek(cursor).toLocaleDateString()} – ${addDays(startOfWeek(cursor), 6).toLocaleDateString()}`
     : cursor.toLocaleString(undefined, { month: 'long', year: 'numeric' });
-
-  const toggleStatus = (s) => setHidden((prev) => {
-    const next = new Set(prev);
-    if (next.has(s)) next.delete(s); else next.add(s);
-    return next;
-  });
 
   const toggleSource = (src) => setHiddenSources((prev) => {
     const next = new Set(prev);
@@ -373,6 +368,31 @@ function ModuleCalendar({
             <Button size="small" onClick={() => setCursor(new Date())}>{formatMessage('calendar.today')}</Button>
             <Typography variant="subtitle1" className={classes.rangeLabel}>{rangeLabel}</Typography>
           </div>
+          <TextField
+            select
+            size="small"
+            className={classes.statusField}
+            label={formatMessage('calendar.status')}
+            value={statusList.filter((st) => !hidden.has(st))}
+            onChange={(ev) => {
+              const shown = new Set(ev.target.value);
+              setHidden(new Set(statusList.filter((st) => !shown.has(st))));
+            }}
+            SelectProps={{
+              multiple: true,
+              renderValue: (selected) => (selected.length === statusList.length
+                ? formatMessage('calendar.allStatuses')
+                : selected.map(tr).join(', ')),
+            }}
+          >
+            {statusList.map((st) => (
+              <MenuItem key={st} value={st} dense>
+                <Checkbox size="small" color="primary" checked={!hidden.has(st)} />
+                <span className={classes.legendDot} style={{ background: color(st), marginRight: 8 }} />
+                {tr(st)}
+              </MenuItem>
+            ))}
+          </TextField>
           <div className={classes.seg}>
             {onFetchUnifiedRange && !unifiedOnly && (
               <Button
@@ -415,22 +435,6 @@ function ModuleCalendar({
             ))}
           </div>
         )}
-        <div className={classes.legend} role="group" aria-label={formatMessage('calendar.statusFilter')}>
-          {statusList.map((s) => (
-            <span
-              key={s}
-              className={`${classes.legendChip} ${hidden.has(s) ? classes.legendOff : ''}`}
-              onClick={() => toggleStatus(s)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleStatus(s); }}
-              aria-pressed={!hidden.has(s)}
-            >
-              <span className={classes.legendDot} style={{ background: color(s) }} />
-              {tr(s)}
-            </span>
-          ))}
-        </div>
 
         <ProgressOrError progress={fetching} error={error} />
 
