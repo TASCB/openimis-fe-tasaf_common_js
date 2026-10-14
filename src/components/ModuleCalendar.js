@@ -1,7 +1,9 @@
 import React, {
   useEffect, useState, useMemo,
 } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import {
+  makeStyles, useTheme, alpha, darken,
+} from '@material-ui/core/styles';
 import {
   Paper, Typography, Button, IconButton, Popover, Box, Fab,
 } from '@material-ui/core';
@@ -21,24 +23,27 @@ import {
   startOfMonth, endOfMonth, startOfWeek, addDays, layoutWeek, coversDay, eventSpan,
 } from '../utils/calendar-dates';
 
-/* ── colour helpers ── */
-const hexToRgb = (hex) => {
-  let h = (hex || '#9e9e9e').replace('#', '');
-  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
-  const n = parseInt(h, 16);
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-};
-const rgba = (hex, a) => { const { r, g, b } = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; };
-const darken = (hex, amt) => {
-  const { r, g, b } = hexToRgb(hex);
-  const f = (c) => Math.max(0, Math.round(c * (1 - amt)));
-  return `rgb(${f(r)},${f(g)},${f(b)})`;
-};
+const rgba = (color, opacity) => alpha(color, opacity);
 
 const eventTime = (iso) => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime()) || (!d.getHours() && !d.getMinutes())) return '';
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
+const STATUS_TONE = {
+  DRAFT: 'planning',
+  SUBMITTED: 'planning',
+  MANAGER_APPROVED: 'planning',
+  OFFICER_APPROVED: 'planning',
+  APPROVED: 'confirmed',
+  SCHEDULED: 'confirmed',
+  ONGOING: 'running',
+  COMPLETED: 'finished',
+  CLOSED: 'finished',
+  ARCHIVED: 'finished',
+  REJECTED: 'stopped',
+  CANCELLED: 'stopped',
 };
 
 const DOW_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -163,10 +168,11 @@ const useStyles = makeStyles((theme) => ({
 
 function ModuleCalendar({
   moduleName, events, fetching, error, onFetchRange,
-  statusColors, statusList, onOpenEvent, onCreate, title, subtitle,
+  statusList, onOpenEvent, onCreate, title, subtitle,
   onFetchUnifiedRange, sourceColors, ownSource, unifiedOnly = false,
 }) {
   const classes = useStyles();
+  const theme = useTheme();
   const modulesManager = useModulesManager();
   const { formatMessage, formatMessageWithValues } = useTranslations(moduleName, modulesManager);
   const [view, setView] = useState('month');
@@ -191,7 +197,15 @@ function ModuleCalendar({
   }, [unifiedActive, range.from && range.from.getTime(), range.to && range.to.getTime()]);
 
   const tr = (status) => formatMessage(`status.${status}`);
-  const color = (status) => statusColors[status] || '#9e9e9e';
+  const toneColors = {
+    planning: theme.palette.grey[500],
+    confirmed: theme.palette.primary.light || theme.palette.primary.main,
+    running: theme.palette.primary.main,
+    finished: theme.palette.primary.dark || theme.palette.primary.main,
+    stopped: theme.palette.grey[400],
+  };
+  const color = (status) => toneColors[STATUS_TONE[status]] || theme.palette.grey[500];
+  const isStopped = (e) => STATUS_TONE[e.status] === 'stopped';
   const eventColor = (e) => (unifiedActive && e.source && sourceColors
     ? sourceColors[e.source] || '#9e9e9e'
     : color(e.status));
@@ -238,7 +252,11 @@ function ModuleCalendar({
       key={e.id}
       className={`${classes.event} ${extraClass}`}
       style={{
-        background: rgba(eventColor(e), 0.14), color: darken(eventColor(e), 0.35), borderLeft: `3px solid ${eventColor(e)}`, ...extraStyle,
+        background: rgba(eventColor(e), 0.14),
+        color: darken(eventColor(e), 0.35),
+        borderLeft: `3px solid ${eventColor(e)}`,
+        ...(isStopped(e) ? { textDecoration: 'line-through' } : {}),
+        ...extraStyle,
       }}
       title={`${e.code} · ${e.title} — ${tr(e.status)}`}
       onClick={() => onOpenEvent(e)}
