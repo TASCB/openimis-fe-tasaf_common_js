@@ -6,11 +6,10 @@ import {
 } from '@material-ui/core/styles';
 import {
   Paper, Typography, Button, IconButton, Popover, Box, Fab, TextField, MenuItem, Checkbox,
+  ButtonGroup, FormControlLabel, Switch,
 } from '@material-ui/core';
 import ChevronLeft from '@material-ui/icons/ChevronLeft';
 import ChevronRight from '@material-ui/icons/ChevronRight';
-import CalendarTodayIcon from '@material-ui/icons/CalendarToday';
-import PublicIcon from '@material-ui/icons/Public';
 import ViewModuleIcon from '@material-ui/icons/ViewModule';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import ViewListIcon from '@material-ui/icons/ViewList';
@@ -57,18 +56,8 @@ const useStyles = makeStyles((theme) => ({
     gap: theme.spacing(2), marginBottom: theme.spacing(3.5), flexWrap: 'wrap',
   },
   fab: theme.fab,
-  headerLeft: { display: 'flex', alignItems: 'center', gap: theme.spacing(1.5) },
-  iconWrap: {
-    width: 44, height: 44, borderRadius: '50%', display: 'flex',
-    alignItems: 'center', justifyContent: 'center',
-    background: rgba(theme.palette.primary.main, 0.12), color: theme.palette.primary.main,
-  },
   title: { fontWeight: 600, lineHeight: 1.15 },
   subtitle: { color: theme.palette.text.secondary, fontSize: 13 },
-  count: {
-    background: rgba(theme.palette.primary.main, 0.1), color: theme.palette.primary.dark || theme.palette.primary.main,
-    borderRadius: 999, padding: '3px 12px', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
-  },
   card: {
     display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 10,
     minHeight: 'calc(100vh - 285px)',
@@ -80,14 +69,6 @@ const useStyles = makeStyles((theme) => ({
   },
   navGroup: { display: 'flex', alignItems: 'center', gap: theme.spacing(0.5) },
   rangeLabel: { fontWeight: 600, marginLeft: theme.spacing(1), minWidth: 150 },
-  seg: {
-    display: 'inline-flex', border: `1px solid ${theme.palette.divider}`, borderRadius: 8, overflow: 'hidden',
-  },
-  segBtn: {
-    border: 'none', borderRadius: 0, padding: '5px 12px', minWidth: 0,
-    textTransform: 'none', fontWeight: 500,
-  },
-  segActive: { background: theme.palette.primary.main, color: theme.palette.primary.contrastText },
   legend: {
     display: 'flex', flexWrap: 'wrap', gap: theme.spacing(0.75),
     padding: theme.spacing(1, 1.5), borderBottom: `1px solid ${theme.palette.divider}`,
@@ -182,7 +163,7 @@ function ModuleCalendar({
   const unifiedActive = unifiedOnly || unified;
   const [cursor, setCursor] = useState(new Date());
   const [hidden, setHidden] = useState(() => new Set());
-  const [dayPop, setDayPop] = useState(null); // { anchorEl, day, events }
+  const [dayPop, setDayPop] = useState(null);
   const today = new Date();
 
   const range = useMemo(() => {
@@ -333,25 +314,25 @@ function ModuleCalendar({
   }, [visibleEvents]);
 
   const isEmpty = !fetching && !error && visibleEvents.length === 0;
+  const periodStart = view === 'week' ? startOfWeek(cursor) : startOfMonth(cursor);
+  const periodEnd = view === 'week' ? addDays(periodStart, 6) : endOfMonth(cursor);
+  const periodCount = visibleEvents.filter((e) => {
+    const { first, last } = eventSpan(e);
+    return first <= periodEnd && last >= periodStart;
+  }).length;
 
   return (
     <div className={classes.root}>
-      {/* Header */}
       <div className={classes.header}>
-        <div className={classes.headerLeft}>
-          <div className={classes.iconWrap}><CalendarTodayIcon /></div>
-          <div>
-            <Typography variant="h5" className={classes.title}>{title}</Typography>
-            {subtitle && <div className={classes.subtitle}>{subtitle}</div>}
-          </div>
+        <div>
+          <Typography variant="h5" className={classes.title}>{title}</Typography>
+          {subtitle && <div className={classes.subtitle}>{subtitle}</div>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {!fetching && !error && (
-            <span className={classes.count}>
-              {formatMessageWithValues('calendar.count', { count: visibleEvents.length })}
-            </span>
-          )}
-        </div>
+        {!fetching && !error && (
+          <Typography variant="body2" className={classes.subtitle}>
+            {formatMessageWithValues('calendar.count', { count: periodCount })}
+          </Typography>
+        )}
       </div>
 
       {onCreate && withTooltip(
@@ -360,7 +341,6 @@ function ModuleCalendar({
       )}
 
       <Paper className={classes.card}>
-        {/* Toolbar */}
         <div className={classes.toolbar}>
           <div className={classes.navGroup}>
             <IconButton size="small" onClick={() => move(-1)} aria-label={formatMessage('calendar.prev')}><ChevronLeft /></IconButton>
@@ -393,30 +373,26 @@ function ModuleCalendar({
               </MenuItem>
             ))}
           </TextField>
-          <div className={classes.seg}>
-            {onFetchUnifiedRange && !unifiedOnly && (
-              <Button
-                className={`${classes.segBtn} ${unified ? classes.segActive : ''}`}
-                startIcon={<PublicIcon />}
-                onClick={() => setUnified((u) => !u)}
-              >
-                {formatMessage(unified ? 'calendar.scope.all' : 'calendar.scope.module')}
-              </Button>
-            )}
+          {onFetchUnifiedRange && !unifiedOnly && (
+            <FormControlLabel
+              control={<Switch color="primary" checked={unified} onChange={() => setUnified((u) => !u)} />}
+              label={formatMessage('calendar.scope.all')}
+            />
+          )}
+          <ButtonGroup size="small" color="primary">
             {VIEWS.map((v) => (
               <Button
                 key={v}
-                className={`${classes.segBtn} ${view === v ? classes.segActive : ''}`}
+                variant={view === v ? 'contained' : 'outlined'}
                 startIcon={v === 'month' ? <ViewModuleIcon /> : v === 'week' ? <ViewWeekIcon /> : <ViewListIcon />}
                 onClick={() => setView(v)}
               >
                 {formatMessage(`calendar.${v}`)}
               </Button>
             ))}
-          </div>
+          </ButtonGroup>
         </div>
 
-        {/* Legend / filter */}
         {unifiedActive && sourceColors && (
           <div className={classes.legend} role="group" aria-label={formatMessage('calendar.sourceLegend')}>
             {Object.keys(sourceColors).map((src) => (
@@ -493,7 +469,6 @@ function ModuleCalendar({
         )}
       </Paper>
 
-      {/* "+N more" day popover */}
       <Popover
         open={Boolean(dayPop)}
         anchorEl={dayPop && dayPop.anchorEl}
