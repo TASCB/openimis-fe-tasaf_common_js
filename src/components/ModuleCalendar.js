@@ -45,6 +45,10 @@ const STATUS_TONE = {
   CANCELLED: 'stopped',
 };
 
+const dateParam = (d) => [
+  d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0'),
+].join('-');
+
 const DOW_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const sameDay = (a, b) => a.toDateString() === b.toDateString();
 const VIEWS = ['month', 'week', 'agenda'];
@@ -253,7 +257,18 @@ function ModuleCalendar({
     else if (isToday) cls.push(classes.cellToday);
     else if (isWeekend) cls.push(classes.cellWeekend);
     return (
-      <div className={cls.join(' ')} key={day.toISOString()}>
+      <div
+        className={cls.join(' ')}
+        key={day.toISOString()}
+        {...(onCreate ? {
+          role: 'button',
+          tabIndex: -1,
+          title: formatMessage('calendar.new'),
+          onClick: () => onCreate(dateParam(day)),
+          onKeyDown: (ev) => { if (ev.key === 'Enter') onCreate(dateParam(day)); },
+          style: { cursor: 'pointer' },
+        } : {})}
+      >
         <span
           className={[classes.dayNum, isToday ? classes.dayNumToday : '', !inMonth ? classes.dayNumOther : ''].join(' ')}
           {...(isToday ? { 'aria-current': 'date' } : {})}
@@ -264,7 +279,10 @@ function ModuleCalendar({
           <button
             type="button"
             className={classes.more}
-            onClick={(ev) => setDayPop({ anchorEl: ev.currentTarget, day, events: eventsOnDay(day) })}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setDayPop({ anchorEl: ev.currentTarget, day, events: eventsOnDay(day) });
+            }}
           >
             {formatMessageWithValues('calendar.more', { count: hiddenCount })}
           </button>
@@ -336,7 +354,7 @@ function ModuleCalendar({
       </div>
 
       {onCreate && withTooltip(
-        <div className={classes.fab}><Fab color="primary" onClick={onCreate}><AddIcon /></Fab></div>,
+        <div className={classes.fab}><Fab color="primary" onClick={() => onCreate()}><AddIcon /></Fab></div>,
         formatMessage('createButton.tooltip'),
       )}
 
