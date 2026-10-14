@@ -244,7 +244,6 @@ function ModuleCalendar({
       onClick={() => onOpenEvent(e)}
       aria-label={`${e.code} ${e.title}, ${tr(e.status)}`}
     >
-      <span className={classes.eventCode}>{e.code}</span>
       {dense ? e.title : <span>{e.title} · <em>{tr(e.status)}</em></span>}
     </button>
   );
