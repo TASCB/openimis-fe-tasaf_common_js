@@ -135,7 +135,6 @@ const useStyles = makeStyles((theme) => ({
     '&:hover': { transform: 'translateY(-1px)', boxShadow: theme.shadows[2] },
     '&:focus-visible': { outline: `2px solid ${theme.palette.primary.main}`, outlineOffset: 1 },
   },
-  eventCode: { fontWeight: 700, fontVariantNumeric: 'tabular-nums', marginRight: 4 },
   more: {
     fontSize: 11, color: theme.palette.primary.main, cursor: 'pointer', fontWeight: 600,
     padding: '0 4px', alignSelf: 'flex-start', background: 'none', border: 'none', marginTop: 'auto',

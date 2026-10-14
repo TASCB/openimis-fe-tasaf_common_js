@@ -17,9 +17,8 @@ export {
 } from './pdf/branded';
 
 export { ModuleCalendar };
+export { default as ConflictPanel } from './components/ConflictPanel';
 
-// Presentational dashboard building blocks. Purely visual and module-agnostic, so any
-// module can compose a dashboard from them instead of copying the file.
 export {
   DashboardHeader,
   StatCard,
