@@ -6,7 +6,7 @@ import {
 } from '@material-ui/core/styles';
 import {
   Paper, Typography, Button, IconButton, Popover, Box, Fab, TextField, MenuItem, Checkbox,
-  ButtonGroup, FormControlLabel, Switch,
+  ButtonGroup, FormControlLabel, Switch, Table, TableHead, TableBody, TableRow, TableCell,
 } from '@material-ui/core';
 import ChevronLeft from '@material-ui/icons/ChevronLeft';
 import ChevronRight from '@material-ui/icons/ChevronRight';
@@ -71,8 +71,9 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(1, 1.5), gap: theme.spacing(1), flexWrap: 'wrap',
     borderBottom: `1px solid ${theme.palette.divider}`,
   },
-  navGroup: { display: 'flex', alignItems: 'center', gap: theme.spacing(0.5) },
-  rangeLabel: { fontWeight: 600, marginLeft: theme.spacing(1), minWidth: 150 },
+  navGroup: { display: 'flex', alignItems: 'center', gap: theme.spacing(0.5), marginRight: 'auto' },
+  rangeLabel: { fontWeight: 600, marginLeft: theme.spacing(1) },
+  toolbarBtn: { height: 32, textTransform: 'none' },
   legend: {
     display: 'flex', flexWrap: 'wrap', gap: theme.spacing(0.75),
     padding: theme.spacing(1, 1.5), borderBottom: `1px solid ${theme.palette.divider}`,
@@ -85,7 +86,12 @@ const useStyles = makeStyles((theme) => ({
   },
   legendOff: { opacity: 0.4 },
   legendDot: { width: 10, height: 10, borderRadius: '50%', flexShrink: 0 },
-  statusField: { minWidth: 200, maxWidth: 280, marginLeft: 'auto' },
+  scopeSwitch: { marginLeft: 'auto', marginRight: 0 },
+  statusField: {
+    minWidth: 180,
+    maxWidth: 280,
+    '& .MuiOutlinedInput-root': { height: 32, fontSize: '0.8125rem' },
+  },
   gridHead: { display: 'flex', borderBottom: `1px solid ${theme.palette.divider}` },
   dow: {
     flex: 1, textAlign: 'center', fontWeight: 600, fontSize: 11.5, letterSpacing: 0.4,
@@ -136,16 +142,12 @@ const useStyles = makeStyles((theme) => ({
   },
   popDay: { padding: theme.spacing(1.5), maxWidth: 320 },
   popTitle: { fontWeight: 600, marginBottom: theme.spacing(1) },
-  agenda: { padding: theme.spacing(1, 0), overflowY: 'auto' },
-  agendaDay: { display: 'flex', gap: theme.spacing(2), padding: theme.spacing(1, 2), borderBottom: `1px solid ${theme.palette.divider}` },
-  agendaDate: { minWidth: 96, textAlign: 'right', color: theme.palette.text.secondary },
-  agendaDateNum: { fontSize: 22, fontWeight: 700, color: theme.palette.text.primary, lineHeight: 1 },
-  agendaList: { flex: 1, display: 'flex', flexDirection: 'column', gap: 6 },
-  agendaRow: {
-    display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '6px 8px',
-    borderRadius: 6, border: `1px solid ${theme.palette.divider}`,
-    '&:hover': { background: theme.palette.action.hover },
-  },
+  agenda: { overflowY: 'auto' },
+  agendaHead: theme.table.header,
+  agendaGroupStart: { '& td': { borderTop: `1px solid ${theme.palette.divider}` } },
+  agendaDate: { width: 130, whiteSpace: 'nowrap', fontWeight: 600, verticalAlign: 'top' },
+  agendaCode: { color: theme.palette.text.secondary, fontSize: 12 },
+  agendaNowrap: { whiteSpace: 'nowrap' },
   empty: {
     flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
     color: theme.palette.text.secondary, gap: theme.spacing(1.5), padding: theme.spacing(6),
@@ -183,6 +185,14 @@ function ModuleCalendar({
   }, [unifiedActive, range.from && range.from.getTime(), range.to && range.to.getTime()]);
 
   const tr = (status) => formatMessage(`status.${status}`);
+  const trEvent = (e) => {
+    if (e.source) {
+      const key = `${e.source.toLowerCase()}.status.${e.status}`;
+      const label = formatMessage(key);
+      if (label !== key) return label;
+    }
+    return tr(e.status);
+  };
   const toneColors = {
     planning: theme.palette.grey[500],
     confirmed: theme.palette.primary.light || theme.palette.primary.main,
@@ -234,15 +244,14 @@ function ModuleCalendar({
       style={{
         background: rgba(eventColor(e), 0.14),
         color: darken(eventColor(e), 0.35),
-        borderLeft: `3px solid ${eventColor(e)}`,
         ...(isStopped(e) ? { textDecoration: 'line-through' } : {}),
         ...extraStyle,
       }}
-      title={`${e.code} · ${e.title} — ${tr(e.status)}`}
+      title={`${e.code} · ${e.title} — ${trEvent(e)}`}
       onClick={() => onOpenEvent(e)}
-      aria-label={`${e.code} ${e.title}, ${tr(e.status)}`}
+      aria-label={`${e.code} ${e.title}, ${trEvent(e)}`}
     >
-      {dense ? e.title : <span>{e.title} · <em>{tr(e.status)}</em></span>}
+      {dense ? e.title : <span>{e.title} · <em>{trEvent(e)}</em></span>}
     </button>
   );
 
@@ -308,7 +317,6 @@ function ModuleCalendar({
               left: `calc(${(g.start * 100) / 7}% + 3px)`,
               width: `calc(${((g.end - g.start + 1) * 100) / 7}% - 6px)`,
               top: DAY_NUM_HEIGHT + g.lane * LANE_HEIGHT,
-              ...(g.continuesBefore ? { borderLeft: 'none' } : {}),
             },
           ))}
         </div>
@@ -346,11 +354,6 @@ function ModuleCalendar({
           <Typography variant="h5" className={classes.title}>{title}</Typography>
           {subtitle && <div className={classes.subtitle}>{subtitle}</div>}
         </div>
-        {!fetching && !error && (
-          <Typography variant="body2" className={classes.subtitle}>
-            {formatMessageWithValues('calendar.count', { count: periodCount })}
-          </Typography>
-        )}
       </div>
 
       {onCreate && withTooltip(
@@ -361,16 +364,31 @@ function ModuleCalendar({
       <Paper className={classes.card}>
         <div className={classes.toolbar}>
           <div className={classes.navGroup}>
+            <Button size="small" color="primary" className={classes.toolbarBtn} onClick={() => setCursor(new Date())}>
+              {formatMessage('calendar.today')}
+            </Button>
             <IconButton size="small" onClick={() => move(-1)} aria-label={formatMessage('calendar.prev')}><ChevronLeft /></IconButton>
             <IconButton size="small" onClick={() => move(1)} aria-label={formatMessage('calendar.next')}><ChevronRight /></IconButton>
-            <Button size="small" onClick={() => setCursor(new Date())}>{formatMessage('calendar.today')}</Button>
             <Typography variant="subtitle1" className={classes.rangeLabel}>{rangeLabel}</Typography>
+            {!fetching && !error && (
+              <Typography variant="body2" className={classes.subtitle}>
+                {'· '}
+                {formatMessageWithValues('calendar.count', { count: periodCount })}
+              </Typography>
+            )}
           </div>
+          {onFetchUnifiedRange && !unifiedOnly && (
+            <FormControlLabel
+              className={classes.scopeSwitch}
+              control={<Switch color="primary" checked={unified} onChange={() => setUnified((u) => !u)} />}
+              label={formatMessage('calendar.otherModules')}
+            />
+          )}
           <TextField
             select
             size="small"
+            variant="outlined"
             className={classes.statusField}
-            label={formatMessage('calendar.status')}
             value={statusList.filter((st) => !hidden.has(st))}
             onChange={(ev) => {
               const shown = new Set(ev.target.value);
@@ -378,6 +396,7 @@ function ModuleCalendar({
             }}
             SelectProps={{
               multiple: true,
+              inputProps: { 'aria-label': formatMessage('calendar.status') },
               renderValue: (selected) => (selected.length === statusList.length
                 ? formatMessage('calendar.allStatuses')
                 : selected.map(tr).join(', ')),
@@ -391,17 +410,12 @@ function ModuleCalendar({
               </MenuItem>
             ))}
           </TextField>
-          {onFetchUnifiedRange && !unifiedOnly && (
-            <FormControlLabel
-              control={<Switch color="primary" checked={unified} onChange={() => setUnified((u) => !u)} />}
-              label={formatMessage('calendar.scope.all')}
-            />
-          )}
           <ButtonGroup size="small" color="primary">
             {VIEWS.map((v) => (
               <Button
                 key={v}
                 variant={view === v ? 'contained' : 'outlined'}
+                className={classes.toolbarBtn}
                 startIcon={v === 'month' ? <ViewModuleIcon /> : v === 'week' ? <ViewWeekIcon /> : <ViewListIcon />}
                 onClick={() => setView(v)}
               >
@@ -440,35 +454,49 @@ function ModuleCalendar({
             </div>
           ) : view === 'agenda' ? (
             <div className={classes.agenda}>
-              {agendaGroups.map((g) => (
-                <div className={classes.agendaDay} key={g.key}>
-                  <div className={classes.agendaDate}>
-                    <div className={classes.agendaDateNum}>{g.day.getDate()}</div>
-                    <div>{g.day.toLocaleDateString(undefined, { weekday: 'short', month: 'short' })}</div>
-                  </div>
-                  <div className={classes.agendaList}>
-                    {g.items.map((e) => (
-                      <div
-                        className={classes.agendaRow}
-                        key={e.id}
-                        onClick={() => onOpenEvent(e)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(ev) => { if (ev.key === 'Enter') onOpenEvent(e); }}
-                      >
-                        <span className={classes.legendDot} style={{ background: eventColor(e) }} />
-                        <span className={classes.eventCode}>{e.code}</span>
-                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</span>
-                        {spanLabel(e) && <span style={{ color: '#888', fontSize: 12 }}>{spanLabel(e)}</span>}
-                        <span style={{ color: darken(color(e.status), 0.25), fontSize: 12, fontWeight: 600 }}>{tr(e.status)}</span>
-                        {!!eventTime(e.startDatetime) && (
-                          <span style={{ color: '#888', fontSize: 12 }}>{eventTime(e.startDatetime)}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell className={classes.agendaHead}>{formatMessage('calendar.col.date')}</TableCell>
+                    <TableCell className={classes.agendaHead}>{formatMessage('calendar.col.activity')}</TableCell>
+                    {unifiedActive && <TableCell className={classes.agendaHead}>{formatMessage('calendar.col.module')}</TableCell>}
+                    <TableCell className={classes.agendaHead}>{formatMessage('calendar.col.when')}</TableCell>
+                    <TableCell className={classes.agendaHead}>{formatMessage('calendar.status')}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {agendaGroups.map((g) => g.items.map((e, i) => (
+                    <TableRow
+                      hover
+                      key={e.id}
+                      className={i === 0 ? classes.agendaGroupStart : undefined}
+                      onClick={() => onOpenEvent(e)}
+                      onKeyDown={(ev) => { if (ev.key === 'Enter') onOpenEvent(e); }}
+                      tabIndex={0}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <TableCell className={classes.agendaDate}>
+                        {i === 0 ? g.day.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : ''}
+                      </TableCell>
+                      <TableCell>
+                        <div>{e.title}</div>
+                        <div className={classes.agendaCode}>{e.code}</div>
+                      </TableCell>
+                      {unifiedActive && (
+                        <TableCell className={classes.agendaNowrap}>
+                          <span className={classes.legendDot} style={{ background: (sourceColors || {})[e.source] || theme.palette.grey[500], marginRight: 8 }} />
+                          {formatMessage(`calendar.source.${e.source}`)}
+                        </TableCell>
+                      )}
+                      <TableCell className={classes.agendaNowrap}>{spanLabel(e) || eventTime(e.startDatetime)}</TableCell>
+                      <TableCell className={classes.agendaNowrap}>
+                        <span className={classes.legendDot} style={{ background: color(e.status), marginRight: 8 }} />
+                        {trEvent(e)}
+                      </TableCell>
+                    </TableRow>
+                  )))}
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className={classes.body}>
