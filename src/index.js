@@ -18,6 +18,7 @@ export {
 
 export { ModuleCalendar };
 export { default as ConflictPanel } from './components/ConflictPanel';
+export { default as UploadBar, formatFileSize } from './components/UploadBar';
 
 export {
   DashboardHeader,
