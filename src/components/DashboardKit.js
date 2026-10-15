@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/styles';
 import { useTheme } from '@material-ui/core/styles';
 import { alpha } from '@material-ui/core/styles/colorManipulator';
 import {
-  Paper, Typography, Button, IconButton, Tooltip,
+  Paper, Typography, Button, Divider, IconButton, Tooltip,
 } from '@material-ui/core';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import ArrowForwardIcon from '@material-ui/icons/ArrowForwardIos';
@@ -14,56 +14,27 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
     flexWrap: 'wrap', gap: theme.spacing(2), marginBottom: theme.spacing(3),
   },
-  hTitle: { fontWeight: 700, lineHeight: 1.15 },
+  hTitle: { color: theme.palette.primary.main },
   hSub: { color: theme.palette.grey[600], marginTop: theme.spacing(0.5) },
   hMeta: { display: 'flex', alignItems: 'center', gap: theme.spacing(1.5) },
   hRefreshed: { color: theme.palette.grey[600], whiteSpace: 'nowrap', fontSize: '0.8rem' },
-  refreshBtn: {
-    backgroundColor: theme.palette.background.paper, border: `1px solid ${theme.palette.divider}`,
-    borderRadius: 10, padding: theme.spacing(1), color: theme.palette.primary.main,
-    '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
-  },
 
-  card: {
-    position: 'relative', padding: theme.spacing(2.5), borderRadius: 14,
-    backgroundColor: theme.palette.background.paper, border: `1px solid ${theme.palette.divider}`,
-    boxShadow: 'none', height: '100%', overflow: 'hidden',
-    transition: 'transform .15s ease, box-shadow .15s ease',
-  },
-  cardClickable: {
-    cursor: 'pointer',
-    '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.12)}` },
-  },
-  accent: {
-    position: 'absolute', top: 0, left: 0, width: 4, height: '100%',
-    background: theme.palette.primary.main,
-  },
-  label: {
-    textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.72rem',
-    fontWeight: 600, color: theme.palette.grey[600],
-  },
+  card: { padding: theme.spacing(2), height: '100%' },
+  cardClickable: { cursor: 'pointer', '&:hover': { backgroundColor: theme.palette.action.hover } },
+  label: { color: theme.palette.text.secondary },
   value: {
-    fontSize: '2.2rem', fontWeight: 700, lineHeight: 1, marginTop: theme.spacing(1),
+    fontSize: '2rem', fontWeight: 400, lineHeight: 1.1, marginTop: theme.spacing(0.5),
     fontVariantNumeric: 'tabular-nums', color: theme.palette.text.primary,
   },
   valuePrimary: { color: theme.palette.primary.main },
   caption: { fontSize: '0.78rem', color: theme.palette.grey[600], marginTop: theme.spacing(0.75) },
 
-  panel: {
-    padding: theme.spacing(3), borderRadius: 14, backgroundColor: theme.palette.background.paper,
-    border: `1px solid ${theme.palette.divider}`, boxShadow: 'none', height: '100%',
-  },
+  panel: { height: '100%' },
   panelHead: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing(2),
+    ...theme.table.title, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 48,
   },
-  panelTitle: {
-    fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em',
-    fontSize: '0.8rem', color: theme.palette.grey[700],
-  },
-  openBtn: {
-    textTransform: 'none', fontWeight: 600, color: theme.palette.primary.main,
-    '& .MuiButton-endIcon svg': { fontSize: 13 },
-  },
+  panelBody: { padding: theme.spacing(2) },
+  openBtn: { '& .MuiButton-endIcon svg': { fontSize: 13 } },
 
   barTrack: {
     display: 'flex', width: '100%', height: 14, borderRadius: 7, overflow: 'hidden',
@@ -83,15 +54,6 @@ const useStyles = makeStyles((theme) => ({
   rankBar: { height: '100%', background: theme.palette.primary.main, borderRadius: 4 },
   rankVal: { width: 56, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' },
 
-  panelTitleRow: { display: 'flex', alignItems: 'center', gap: theme.spacing(1.5), minWidth: 0 },
-  panelIcon: {
-    width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: theme.palette.action.hover,
-    color: theme.palette.grey[600],
-    '& svg': { fontSize: '1.4rem', display: 'block' },
-  },
-
   // Pipeline: a rail of connected icon nodes above, a row of value cards below, one
   // column per stage so the two rows stay aligned.
   pipeline: { display: 'flex', flexDirection: 'column', gap: theme.spacing(2.5), width: '100%' },
@@ -103,40 +65,38 @@ const useStyles = makeStyles((theme) => ({
   pipelineDash: { flex: 1, borderTop: `1px dashed ${theme.palette.divider}` },
   pipelineDashBlank: { flex: 1 },
   pipelineNode: {
-    width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
+    flexShrink: 0, padding: theme.spacing(0, 1),
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: theme.palette.action.hover,
-    color: theme.palette.grey[600],
+    color: theme.palette.primary.main,
     '& svg': { fontSize: '1.5rem', display: 'block' },
   },
   pipelineCard: {
     flex: 1, margin: theme.spacing(0, 0.75), padding: theme.spacing(1.5, 1),
-    border: `1px solid ${theme.palette.divider}`, borderRadius: 10,
+    border: `1px solid ${theme.palette.divider}`, borderRadius: theme.shape.borderRadius,
     background: theme.palette.background.paper,
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', textAlign: 'center',
   },
-  pipelineCardClickable: { cursor: 'pointer', '&:hover': { borderColor: theme.palette.primary.light } },
+  pipelineCardClickable: { cursor: 'pointer', '&:hover': { backgroundColor: theme.palette.action.hover } },
   pipelineValue: {
-    fontSize: '1.5rem', fontWeight: 700, lineHeight: 1.15,
+    fontSize: '1.5rem', fontWeight: 400, lineHeight: 1.15,
     fontVariantNumeric: 'tabular-nums', color: theme.palette.text.primary,
   },
   pipelineLabel: {
-    marginTop: theme.spacing(0.5), fontSize: '0.78rem', fontWeight: 600,
-    color: theme.palette.text.primary,
+    marginTop: theme.spacing(0.5), fontSize: '0.8rem', color: theme.palette.text.secondary,
   },
   pipelineAmount: { marginTop: theme.spacing(0.25), fontSize: '0.72rem', color: theme.palette.grey[600] },
 
   stepper: { display: 'flex', alignItems: 'stretch', flexWrap: 'wrap', gap: theme.spacing(1) },
   step: {
     flex: '1 1 0', minWidth: 112, display: 'flex', flexDirection: 'column', alignItems: 'center',
-    textAlign: 'center', borderRadius: 12, border: `1px solid ${theme.palette.divider}`,
+    textAlign: 'center', borderRadius: theme.shape.borderRadius, border: `1px solid ${theme.palette.divider}`,
     padding: theme.spacing(1.75, 1), cursor: 'pointer', transition: 'background-color .15s ease',
     '&:hover': { backgroundColor: theme.palette.action.hover },
   },
-  stepActive: { borderColor: theme.palette.primary.main, background: alpha(theme.palette.primary.main, 0.05) },
-  stepValue: { fontSize: '1.7rem', fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums', color: theme.palette.text.primary },
-  stepLabel: { marginTop: theme.spacing(0.75), fontSize: '0.78rem', fontWeight: 600, color: theme.palette.text.primary },
+  stepActive: { borderColor: theme.palette.primary.main },
+  stepValue: { fontSize: '1.7rem', fontWeight: 400, lineHeight: 1, fontVariantNumeric: 'tabular-nums', color: theme.palette.text.primary },
+  stepLabel: { marginTop: theme.spacing(0.75), fontSize: '0.8rem', color: theme.palette.text.secondary },
   stepSub: { marginTop: theme.spacing(0.25), fontSize: '0.72rem', color: theme.palette.grey[600] },
   stepIcon: {
     color: theme.palette.grey[500],
@@ -160,7 +120,7 @@ export function DashboardHeader({
   return (
     <div className={classes.header}>
       <div>
-        <Typography variant="h5" className={classes.hTitle}>{title}</Typography>
+        <Typography variant="h6" className={classes.hTitle}>{title}</Typography>
         {subtitle && <Typography variant="body2" className={classes.hSub}>{subtitle}</Typography>}
       </div>
       {onRefresh && (
@@ -168,7 +128,7 @@ export function DashboardHeader({
           {refreshedLabel && <Typography className={classes.hRefreshed}>{refreshedLabel}</Typography>}
           <Tooltip title={refreshTooltip || ''}>
             <span>
-              <IconButton className={classes.refreshBtn} onClick={onRefresh} disabled={refreshing}>
+              <IconButton color="primary" onClick={onRefresh} disabled={refreshing}>
                 <RefreshIcon fontSize="small" />
               </IconButton>
             </span>
@@ -185,8 +145,7 @@ export function StatCard({
   const classes = useStyles();
   return (
     <Paper className={`${classes.card} ${onClick ? classes.cardClickable : ''}`.trim()} onClick={onClick}>
-      {primary && <span className={classes.accent} />}
-      <Typography className={classes.label}>{label}</Typography>
+      <Typography variant="body2" className={classes.label}>{label}</Typography>
       <Typography className={`${classes.value} ${primary ? classes.valuePrimary : ''}`}>{fmt(value)}</Typography>
       {caption && <Typography className={classes.caption}>{caption}</Typography>}
     </Paper>
@@ -200,14 +159,15 @@ export function SectionCard({
   return (
     <Paper className={classes.panel}>
       <div className={classes.panelHead}>
-        <Typography className={classes.panelTitle}>{title}</Typography>
+        <Typography>{title}</Typography>
         {onAction && (
-          <Button size="small" className={classes.openBtn} endIcon={<ArrowForwardIcon />} onClick={onAction}>
+          <Button size="small" color="primary" className={classes.openBtn} endIcon={<ArrowForwardIcon />} onClick={onAction}>
             {actionLabel}
           </Button>
         )}
       </div>
-      {children}
+      <Divider />
+      <div className={classes.panelBody}>{children}</div>
     </Paper>
   );
 }
