@@ -19,6 +19,9 @@ export {
 export { ModuleCalendar };
 export { default as ConflictPanel } from './components/ConflictPanel';
 export { default as UploadBar, formatFileSize } from './components/UploadBar';
+export {
+  ImportDialog, FileDrop, ChoiceList, StatRow,
+} from './components/ImportDialogKit';
 
 export {
   DashboardHeader,
