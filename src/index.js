@@ -34,6 +34,8 @@ export {
   Stepper,
 } from './components/DashboardKit';
 
+export { default as useTabStyles } from './components/TabStyles';
+
 // Landscape quick-look dialog frame shared by every module's list previews.
 export {
   default as PreviewDialog,
