@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import ModuleCalendar from './components/ModuleCalendar';
+import { setDisplayTimeZone } from './utils/display-time';
 
 export {
   BRAND_TEAL,
@@ -17,6 +18,13 @@ export {
 } from './pdf/branded';
 
 export { ModuleCalendar };
+export {
+  DEFAULT_DISPLAY_TIME_ZONE,
+  formatDisplayTime,
+  getDisplayTimeZone,
+  setDisplayTimeZone,
+  toDisplayTime,
+} from './utils/display-time';
 export { default as ConflictPanel } from './components/ConflictPanel';
 export { default as UploadBar, formatFileSize } from './components/UploadBar';
 export {
@@ -55,4 +63,7 @@ const DEFAULT_CONFIG = {
   ],
 };
 
-export const TasafCommonModule = (cfg) => ({ ...DEFAULT_CONFIG, ...cfg });
+export const TasafCommonModule = (cfg) => {
+  setDisplayTimeZone(cfg?.displayTimeZone);
+  return { ...DEFAULT_CONFIG, ...cfg };
+};
