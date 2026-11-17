@@ -161,10 +161,12 @@ export default function PreviewDialog({
           <div className={classes.main}>{children}</div>
         </div>
       </DialogContent>
-      <DialogActions className={classes.actions}>
-        <div className={classes.meta}>{meta}</div>
-        <div className={classes.buttons}>{actions}</div>
-      </DialogActions>
+      {(meta || actions) && (
+        <DialogActions className={classes.actions}>
+          <div className={classes.meta}>{meta}</div>
+          <div className={classes.buttons}>{actions}</div>
+        </DialogActions>
+      )}
     </Dialog>
   );
 }
